@@ -1,0 +1,29 @@
+{
+    "manifest_version": 2,
+    "name": "LineMeUp Script",
+    "description": "LineMeUp Script for changing player value from CSV",
+    "version": "1.0",
+    "browser_action": {
+        "default_icon": "tab-icon.png",
+        "default_popup": "popup.html",
+        "default_title": "LineMeUp"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://app.linemeup.fr/nba/contests"
+            ],
+            "all_frames": true,
+            "js": [
+                "scripts/content.js"
+            ]
+        }
+    ],
+    "permissions": [
+        "activeTab"
+    ],
+    "web_accessible_resources": [
+        "data/*.csv"
+    ],
+    "content_security_policy": "script-src 'self' https://www.gstatic.com/; object-src 'self'"
+}
