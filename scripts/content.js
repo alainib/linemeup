@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
     vu que les joueurs sont paginées, pour chaque page, il faut récupérer les joueurs et les mettre à jour
     */
     updateNextPage(playersFromCSV);
-    sendResponse({ data: playersFromCSV, success: true });
+    //  sendResponse({ data: playersFromCSV, success: true });
 });
 
 
@@ -90,20 +90,7 @@ function updateNextPage(playersFromCSV) {
             }, 2000);
         }, 5000);
     } else {
-        // 
-        let display = "";
-        for (var key in playersFromCSV) {
-            if (!playersFromCSV[key].updated) {
-                display += key + "\n";
-            }
-        }
-        if (display != "") {
-            alert("FINISH \n not found in this page \n:" + display);
-        } else {
-            alert("FINISH ");
-        }
-
-
+        chrome.runtime.sendMessage({ playersFromCSV, finish: true }, function (response) { });
     }
 }
 
