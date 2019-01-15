@@ -59,7 +59,7 @@ const positionFP = 18;
 
 chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
 
-    let playersFromCSV = await createPlayersFromCSV();
+    let playersFromCSV = await createPlayersFromCSV(request.csvContent);
     /*
     vu que les joueurs sont paginées, pour chaque page, il faut récupérer les joueurs et les mettre à jour
     */
@@ -97,16 +97,20 @@ function updateNextPage(playersFromCSV) {
 /**
  * lit le CSV source, le découpe par joueur
  * retourne un objet avec key = nom de joueur  , value :sa valeur
+ * @param csvContent text content of the CSV file
  */
-async function createPlayersFromCSV() {
-
+async function createPlayersFromCSV(csvContent) {
+    /*
     const url = chrome.runtime.getURL(`data/${filename}`);
     // lit le fichier
     let response = await fetch(url);
     // converti la réponse
     const text = await response.text();
-    // explose le text en ligne
     let data = text.split('\n');
+    */
+
+    // explose le text en ligne
+    let data = csvContent.split('\n');
     // supprime la premiere ligne
     data.shift();
     if (data.length < 1) {
