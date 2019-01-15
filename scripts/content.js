@@ -14,21 +14,31 @@ function tools_replaceAll(str, find, replace) {
     }
     return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 }
+
+/**
+ * clean le nom du joueur
+ * @param {*} name 
+ */
 function tools_cleanName(name) {
     let replaceme = [".", ",", "'"];
     let tmp = name.toLowerCase();
     for (var j in replaceme) {
-        tmp = tools_replaceAll(tmp, replaceme[j], " ");
+        tmp = tools_replaceAll(tmp, replaceme[j], "");
     }
     return tmp;
 }
+
+function stringContain(str, substring) {
+    return str.toLowerCase().indexOf(substring) !== -1;
+}
+
+
 
 /**
  * PARAMETRAGE 
  */
 // nom du fichier csv
 const filename = "data.csv";
-
 // conf pour le site https://app.linemeup.fr/nba/contests
 // indice de colonne contenant le nom
 const positionName = 0;
@@ -51,56 +61,51 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
 
     let playersFromCSV = await createPlayersFromCSV();
     /*
-     vu que les joueurs sont paginées, pour chaque page, il faut récupérer les joueurs et les mettre à jour
-     on peut avoir soit une seul page
-     soit plusieurs avec 
-        1   
-        1 2 >>
-        1 2 3 >> 
-        du coup il faut traiter page par page  
+    vu que les joueurs sont paginées, pour chaque page, il faut récupérer les joueurs et les mettre à jour
     */
-    var paginations = document.querySelectorAll('td.statsTable-footer > div > div.block_shadow');
-    console.log(paginations);
-
-    /*
-    var tds = document.querySelectorAll('table.statsTable-table > tbody > tr');
-    if (tds == null || tds.length < 0) {
-        alert("Error: table of player not found !");
-    } else {
-        // on parcour les élements enfants de ce tableau 
-        // on les stocks dans un tableau associatif avec la clé comme nom de joueur        
-        let playersFromLinemeup = createPlayersFromLinemeup(tds);
-        updateInputsValue(playersFromCSV, playersFromLinemeup);
-    }
-    */
-    /*
-    if (paginations == null || paginations.length < 0) {
-        updateCurrentPage(playersFromCSV);
-    } else {
-
-        updateCurrentPage(playersFromCSV);
-
-    }
-        */
-
-
-
-    /*
-    var data = request.data || {};
-    
-    var linksList = document.querySelectorAll('a');
-    [].forEach.call(linksList, function (header) {
-    header.innerHTML = request.data;
-    });
-    
-    sendResponse({ data: data, success: true }); 
-    */
-    sendResponse({ data: {}, success: true });
-
-
-
+    updateNextPage(playersFromCSV);
+    sendResponse({ data: playersFromCSV, success: true });
 });
 
+
+/**
+ * met a jour la prochaine page , on commence par la courante
+ * 
+ * met a jour les données des joueur de la page courante
+ * puis si page suivante va dessus et rappel recursif 
+ * 
+ * 
+ * @param {*} playersFromCSV 
+ */
+function updateNextPage(playersFromCSV) {
+    updateCurrentPage(playersFromCSV);
+    let nextPaginationDiv = getNextPaginationDiv();
+    // console.log("nextPaginationDiv", nextPaginationDiv);
+    if (nextPaginationDiv) {
+        setTimeout(function () {
+            nextPaginationDiv.dispatchEvent(new Event("click", { bubbles: true }));
+            // var event=new MouseEvent('click',{'view':window,'bubbles':true,'cancelable':true});
+            setTimeout(function () {
+                updateNextPage(playersFromCSV);
+            }, 2000);
+        }, 5000);
+    } else {
+        // 
+        let display = "";
+        for (var key in playersFromCSV) {
+            if (!playersFromCSV[key].updated) {
+                display += key + "\n";
+            }
+        }
+        if (display != "") {
+            alert("FINISH \n not found in this page \n:" + display);
+        } else {
+            alert("FINISH ");
+        }
+
+
+    }
+}
 
 /**
  * lit le CSV source, le découpe par joueur
@@ -118,7 +123,7 @@ async function createPlayersFromCSV() {
     // supprime la premiere ligne
     data.shift();
     if (data.length < 1) {
-        alert("Error: reading CSV file");
+        alert("Error reading CSV file content");
     }
     let playersFromCSV = {};
     for (var i in data) {
@@ -135,6 +140,46 @@ async function createPlayersFromCSV() {
     }
     return playersFromCSV;
 }
+
+
+/**
+ * trouver la div avec les boutons de pagination
+ * trouve sur quel page on est
+ * si on est sur la dernière return null sinon return le prochain
+ */
+function getNextPaginationDiv() {
+
+    var paginationsDivs = document.querySelectorAll('td.statsTable-footer > div > div.block_shadow > div');
+
+    // console.log(paginationsDivs);
+
+    if (paginationsDivs == null) {
+        // les divs n'ont pas été trouvé ! erreur
+        alert("Error: paginationsDivs is null, you need to re run this extension for each players page");
+        return null;
+    } else if (paginationsDivs.length < 2) {
+        // div trouvé et il n'y a qu'une seule page, rien à faire
+        return null;
+    } else {
+        for (var i = 0; i < paginationsDivs.length; i++) {
+            // console.log(paginationsDivs[i].textContent,paginationsDivs[i].className)
+            // on cherche la div de la page courante
+            if (stringContain(paginationsDivs[i].className, "selected")) {
+                // console.log("found");
+                // une fois trouvée on renvoi la suivante si elle existe 
+                if (paginationsDivs[i + 1]) {
+                    return paginationsDivs[i + 1]
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+
+
+}
+
 
 /**
  * prend une liste de <td> et crée le tableau des joueurs à mettre à jour par la suite
@@ -175,9 +220,6 @@ function updateInputsValue(playersFromCSV, playersFromLinemeup) {
                 playersFromLinemeup[key].valueFP.dispatchEvent(new Event("blur", { bubbles: true }));
                 // ne plus utiliser 
                 playersFromCSV[key].updated = true;
-
-            } else {
-                console.log("player not found : <<" + key + ">>");
 
             }
         }
