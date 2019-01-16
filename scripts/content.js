@@ -32,7 +32,16 @@ function stringContain(str, substring) {
     return str.toLowerCase().indexOf(substring) !== -1;
 }
 
-
+function log(param1, param2) {
+    let debug = true;
+    if (debug) {
+        if (param2 != param2) {
+            console.log(param1, param2);
+        } else {
+            console.log(param1);
+        }
+    }
+}
 
 /**
  * PARAMETRAGE 
@@ -44,6 +53,7 @@ const filename = "data.csv";
 const positionName = 0;
 // indice de la colonne contenant la valeur à modifier
 const positionFP = 18;
+const positionPool = 22;
 // ---------------------------------------------------------------
 
 
@@ -58,7 +68,7 @@ const positionFP = 18;
 
 
 chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
-
+    log("start from content.js")
     let playersFromCSV = await createPlayersFromCSV(request.csvContent);
     /*
     vu que les joueurs sont paginées, pour chaque page, il faut récupérer les joueurs et les mettre à jour
@@ -80,7 +90,7 @@ chrome.runtime.onMessage.addListener(async function (request, sender, sendRespon
 function updateNextPage(playersFromCSV) {
     updateCurrentPage(playersFromCSV);
     let nextPaginationDiv = getNextPaginationDiv();
-    // console.log("nextPaginationDiv", nextPaginationDiv);
+    // log("nextPaginationDiv", nextPaginationDiv);
     if (nextPaginationDiv) {
         setTimeout(function () {
             nextPaginationDiv.dispatchEvent(new Event("click", { bubbles: true }));
@@ -91,6 +101,77 @@ function updateNextPage(playersFromCSV) {
         }, 5000);
     } else {
         chrome.runtime.sendMessage({ playersFromCSV, finish: true }, function (response) { });
+    }
+}
+
+/**
+ * met a jour la page de pagination courante
+ * @param {*} playersFromCSV 
+ */
+function updateCurrentPage(playersFromCSV) {
+
+
+    let updateLine = function (valueFP, playersFromCSV, name, iPoolUnChecked) {
+        valueFP.value = playersFromCSV[name].value;
+        // colorie en jaune l'input modifié
+        valueFP.style.backgroundColor = "#ffff00"
+        // appel les evenements crée dans react une fois la donnée modifiée
+        valueFP.dispatchEvent(new Event("change", { bubbles: true }));
+        valueFP.dispatchEvent(new Event("blur", { bubbles: true }));
+        // ce joueur a été trouvé 
+        playersFromCSV[name].updated = true;
+        // coche la pool si jamais elle été décochée avant
+        if (iPoolUnChecked) {
+            // log("click on Pool", playersFromLinemeup[name]);
+            iPoolUnChecked.dispatchEvent(new Event("click", { bubbles: true }));
+        }
+    }
+
+
+    // on cherche les lignes du tableau avec les joueurs à modifier 
+    var tds = document.querySelectorAll('table.statsTable-table > tbody > tr');
+    if (tds == null || tds.length < 0) {
+        alert("Error: table of player not found !");
+    } else {
+        // on parcour les élements enfants de ce tableau 
+        // on les stocks dans un tableau associatif avec la clé comme nom de joueur        
+        let playersFromLinemeup = createPlayersFromLinemeup(tds);
+        log(playersFromLinemeup);
+
+        // on parcour les joueurs de playersFromLinemeup et on regarde si ils sont dans playersFromCSV 
+        for (var name in playersFromLinemeup) {
+            const { valueFP, iPoolChecked, iPoolUnChecked } = playersFromLinemeup[name]
+            let mappedName = getMappedName(name);
+            if (playersFromCSV[name]) { // le joueur existe dans les deux
+                updateLine(valueFP, playersFromCSV, name, iPoolUnChecked);
+            } else if (playersFromCSV[mappedName]) {
+                updateLine(valueFP, playersFromCSV, mappedName, iPoolUnChecked);
+            } else {
+                // le joueur n'existe que dans linemeup , on decoche de la pool                
+                if (iPoolChecked) {
+                    // log("click on Pool", playersFromLinemeup[name]);
+                    iPoolChecked.dispatchEvent(new Event("click", { bubbles: true }));
+                }
+            }
+        }
+        /*
+        // on parcour les joueurs de playersFromCSV et on essaie de mettre a jour dans playersFromLinemeup
+        for (var key in playersFromCSV) {
+            if (!playersFromCSV[key].updated) {
+                if (playersFromLinemeup[key]) {
+                    playersFromLinemeup[key].valueFP.value = playersFromCSV[key].value;
+                    // colorie en jaune l'input modifié
+                    playersFromLinemeup[key].valueFP.style.backgroundColor = "#ffff00"
+                    // appel les evenements crée dans react une fois la donnée modifiée
+                    playersFromLinemeup[key].valueFP.dispatchEvent(new Event("change", { bubbles: true }));
+                    playersFromLinemeup[key].valueFP.dispatchEvent(new Event("blur", { bubbles: true }));
+                    // ne plus utiliser 
+                    playersFromCSV[key].updated = true;
+
+                }
+            }
+        }
+        */
     }
 }
 
@@ -139,10 +220,9 @@ async function createPlayersFromCSV(csvContent) {
  * si on est sur la dernière return null sinon return le prochain
  */
 function getNextPaginationDiv() {
-
     var paginationsDivs = document.querySelectorAll('td.statsTable-footer > div > div.block_shadow > div');
 
-    // console.log(paginationsDivs);
+    log("paginationsDivs", paginationsDivs);
 
     if (paginationsDivs == null) {
         // les divs n'ont pas été trouvé ! erreur
@@ -153,10 +233,10 @@ function getNextPaginationDiv() {
         return null;
     } else {
         for (var i = 0; i < paginationsDivs.length; i++) {
-            // console.log(paginationsDivs[i].textContent,paginationsDivs[i].className)
+            // log(paginationsDivs[i].textContent,paginationsDivs[i].className)
             // on cherche la div de la page courante
             if (stringContain(paginationsDivs[i].className, "selected")) {
-                // console.log("found");
+                // log("found");
                 // une fois trouvée on renvoi la suivante si elle existe 
                 if (paginationsDivs[i + 1]) {
                     return paginationsDivs[i + 1]
@@ -166,9 +246,6 @@ function getNextPaginationDiv() {
             }
         }
     }
-
-
-
 }
 
 
@@ -183,53 +260,34 @@ function createPlayersFromLinemeup(tds) {
         var name = tds[i].childNodes[positionName];
         var textname = tools_cleanName(name.querySelector('.statsTable-row-name-name').innerText);
         var valueFP = tds[i].childNodes[positionFP].querySelector('input');
+        // pour le bouton de pool deja coché
+        var iPoolChecked = tds[i].childNodes[positionPool].querySelector('td > div > i.ic-check_box');
+        // pour le bouton de pool deja decoché
+        var iPoolUnChecked = tds[i].childNodes[positionPool].querySelector('td > div > i.ic-check_box_outline_blank');
 
-        playersFromLinemeup[textname] = { valueFP }
+        playersFromLinemeup[textname] = { valueFP, iPoolChecked, iPoolUnChecked }
     }
+    log("create", playersFromLinemeup);
     return playersFromLinemeup;
 }
 
-
-
-
-
 /**
- * met à jour les input a partir des données du CSV
- * @param {*} playersFromCSV 
- * @param {*} playersFromLinemeup 
+ * certains noms ne sont pas écrit de la meme facon entre "linemeup" et "basketballmonster"
+ * cette fonction permet d'avoir le nom "basketballmonster" via  celui de "linemeup"
+ * @param string lineMeUpName
+ * @return string csv name  
  */
-function updateInputsValue(playersFromCSV, playersFromLinemeup) {
-    // on parcour les joueurs de playersFromCSV et on essaie de mettre a jour dans playersFromLinemeup
-    for (var key in playersFromCSV) {
-        if (!playersFromCSV[key].updated) {
-            if (playersFromLinemeup[key]) {
-                playersFromLinemeup[key].valueFP.value = playersFromCSV[key].value;
-                // colorie en jaune l'input modifié
-                playersFromLinemeup[key].valueFP.style.backgroundColor = "#ffff00"
-                // appel les evenements crée dans react une fois la donnée modifiée
-                playersFromLinemeup[key].valueFP.dispatchEvent(new Event("change", { bubbles: true }));
-                playersFromLinemeup[key].valueFP.dispatchEvent(new Event("blur", { bubbles: true }));
-                // ne plus utiliser 
-                playersFromCSV[key].updated = true;
-
-            }
-        }
-    }
+function getMappedName(lineMeUpName) {
+    lineMeUpName = tools_cleanName(lineMeUpName);
+    return mapping[lineMeUpName];
 }
 
-/**
- * met a jour la page de pagination courante
- * @param {*} playersFromCSV 
- */
-function updateCurrentPage(playersFromCSV) {
-    // on cherche les lignes du tableau avec les joueurs à modifier 
-    var tds = document.querySelectorAll('table.statsTable-table > tbody > tr');
-    if (tds == null || tds.length < 0) {
-        alert("Error: table of player not found !");
-    } else {
-        // on parcour les élements enfants de ce tableau 
-        // on les stocks dans un tableau associatif avec la clé comme nom de joueur        
-        let playersFromLinemeup = createPlayersFromLinemeup(tds);
-        updateInputsValue(playersFromCSV, playersFromLinemeup);
-    }
+
+// mettre les noms en minuscule !!!!!!!
+const mapping = {
+    "in linemeup": "in csv",
+    "maximilian kleber": "maxi kleber",
+    "ishmael smith": "ish smith",
+    "james ennis iii": "james ennis",
+    "tyrone wallace": "ty wallace",
 }
