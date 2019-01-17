@@ -22,18 +22,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     });
 
-    /*
-        var button = document.getElementById('readCSV');
-        button.addEventListener('click', function () {
-            $('#status').html('Processing');
-    
-            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-                chrome.tabs.sendMessage(tabs[0].id, {}, function (response) {
-    
-                    $('#status').html('Processing...');
-                });
-            });
-        });*/
+
 });
 
 
@@ -59,7 +48,13 @@ chrome.runtime.onMessage.addListener(
                     notFoundsTable += `<tr><td>${item.name}</td><td>${item.value}</td></tr>`
                 });
                 notFoundsTable += "</table>";
-                $('#status').html("FINISH <br>not found in this page : <br>" + notFoundsTable);
+                let content = "FINISH <br><br><br> Players from CSV not found in this page : <br><br>" + notFoundsTable;
+                $('#status').html(content);
+
+                let htmlCode = `<!DOCTYPE html><html><head></head><body><style>.container{background: white;}table{border-collapse: collapse;width: 100%;}th, td{text-align: left;padding: 8px;}tr:nth-child(even){background-color: #f2f2f2}th{background-color: #4CAF50;color: white;}</style>${content}</body></html>`;
+                var url = "data:text/html," + encodeURIComponent(htmlCode);
+                chrome.tabs.create({ url: url });
+
 
             } else {
 
