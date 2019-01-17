@@ -35,7 +35,7 @@ function stringContain(str, substring) {
 function log(param1, param2) {
     let debug = true;
     if (debug) {
-        if (param2 != param2) {
+        if (param2 != undefined) {
             console.log(param1, param2);
         } else {
             console.log(param1);
@@ -110,7 +110,7 @@ function updateNextPage(playersFromCSV) {
  */
 function updateCurrentPage(playersFromCSV) {
 
-
+    console.log("updateCurrentPage");
     let updateLine = function (valueFP, playersFromCSV, name, iPoolUnChecked) {
         valueFP.value = playersFromCSV[name].value;
         // colorie en jaune l'input modifié
@@ -221,7 +221,6 @@ async function createPlayersFromCSV(csvContent) {
  */
 function getNextPaginationDiv() {
     var paginationsDivs = document.querySelectorAll('td.statsTable-footer > div > div.block_shadow > div');
-
     log("paginationsDivs", paginationsDivs);
 
     if (paginationsDivs == null) {
@@ -284,10 +283,15 @@ function getMappedName(lineMeUpName) {
 
 
 // mettre les noms en minuscule !!!!!!!
+// bien enlever les espaces avant et apres !!!!
 const mapping = {
     "in linemeup": "in csv",
     "maximilian kleber": "maxi kleber",
     "ishmael smith": "ish smith",
     "james ennis iii": "james ennis",
     "tyrone wallace": "ty wallace",
+    "shaquille harrison": "shaq harrison",
+    "wayne selden jr": "wayne selden"
 }
+
+
