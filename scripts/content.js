@@ -52,8 +52,8 @@ const filename = "data.csv";
 // indice de colonne contenant le nom
 const positionName = 0;
 // indice de la colonne contenant la valeur à modifier
-const positionFP = 18;
-const positionPool = 22;
+const positionFP = 19;
+const positionPool = 23;
 // ---------------------------------------------------------------
 
 
@@ -112,6 +112,12 @@ function updateCurrentPage(playersFromCSV) {
 
     console.log("updateCurrentPage");
     let updateLine = function (valueFP, playersFromCSV, name, iPoolUnChecked) {
+        console.log(
+            {
+                valueFP, playersFromCSV, name, iPoolUnChecked,
+                ppp: playersFromCSV[name]
+            }
+        );
         valueFP.value = playersFromCSV[name].value;
         // colorie en jaune l'input modifié
         valueFP.style.backgroundColor = "#ffff00"
@@ -258,7 +264,15 @@ function createPlayersFromLinemeup(tds) {
     for (var i = 0; i < tds.length; i++) {
         var name = tds[i].childNodes[positionName];
         var textname = tools_cleanName(name.querySelector('.statsTable-row-name-name').innerText);
-        var valueFP = tds[i].childNodes[positionFP].querySelector('input');
+        /*
+         console.log(
+             "valueFP", tds[i].childNodes[positionFP],
+             "input", tds[i].childNodes[positionFP].querySelector('input'),
+             "td input", tds[i].childNodes[positionFP].querySelector('td > input')
+         );
+         */
+        var valueFP = tds[i].childNodes[positionFP].querySelector('td > input');
+        console.log('iPoolChecked  ', tds[i].childNodes[positionPool]);
         // pour le bouton de pool deja coché
         var iPoolChecked = tds[i].childNodes[positionPool].querySelector('td > div > i.ic-check_box');
         // pour le bouton de pool deja decoché
@@ -291,7 +305,7 @@ const mapping = {
     "james ennis iii": "james ennis",
     "tyrone wallace": "ty wallace",
     "shaquille harrison": "shaq harrison",
-    "wayne selden jr": "wayne selden"
-}
-
-
+    "wayne selden jr": "wayne selden",
+    "mo bamba": "mohamed bamba",
+    "derrick jones jr": "derrick jones",
+} 
